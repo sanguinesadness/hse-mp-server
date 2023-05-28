@@ -9,6 +9,6 @@ datasource db {
 
 model User {
   id        String @id(map: "user_pk") @default(dbgenerated("gen_random_uuid()")) @db.VarChar
-  clientId Int    @unique(map: "user_client_id_uindex")
+  clientId     String    @unique(map: "user_client_id_uindex") @db.VarChar
   apiKey   String @unique(map: "user_api_key_uindex") @db.VarChar
 }

@@ -1,7 +1,7 @@
 export class ResponseModel<T> {
-  result: T;
+  result: T | object;
 
-  constructor(data: T) {
-    this.result = data;
+  constructor(data?: T) {
+    this.result = data || {};
   }
 }

@@ -1,12 +1,27 @@
-import { Body, Controller, Next, Post, Response } from '@nestjs/common';
+import { Body, Controller, Get, Next, Post, Response } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { NextFunction, Response as EResponse } from 'express';
 import { ResponseModel } from 'models';
+import { TExtendedRequestBody, TUserCredentials } from 'types';
 import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
+
+  @Get('/check_auth')
+  public async checkAuth(
+    @Body() data: TExtendedRequestBody,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const user = await this.userService.findBy('id', data.userId);
+      res.json(new ResponseModel({ user }));
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Post('/create')
   public async create(
@@ -29,8 +44,22 @@ export class UserController {
     @Next() next: NextFunction
   ) {
     try {
-      const users = await this.userService.findMany(data);
-      res.json(new ResponseModel({ users }));
+      const user = await this.userService.find(data);
+      res.json(new ResponseModel({ user }));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Post('/login')
+  public async login(
+    @Body() data: TUserCredentials,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const user = await this.userService.tryLogin(data);
+      res.json(new ResponseModel({ user }));
     } catch (error) {
       next(error);
     }
