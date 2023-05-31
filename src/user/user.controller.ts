@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Next, Post, Response } from '@nestjs/common';
+import { Body, Controller, Next, Post, Response } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { NextFunction, Response as EResponse } from 'express';
 import { ResponseModel } from 'models';
@@ -9,14 +9,14 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('/check_auth')
+  @Post('/check_auth')
   public async checkAuth(
     @Body() data: TExtendedRequestBody,
     @Response() res: EResponse,
     @Next() next: NextFunction
   ) {
     try {
-      const user = await this.userService.findBy('id', data.userId);
+      const user = data.user;
       res.json(new ResponseModel({ user }));
     } catch (error) {
       next(error);

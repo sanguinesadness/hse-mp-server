@@ -20,8 +20,9 @@ export class UserAuthMiddleware implements NestMiddleware {
       }
       const credentials = { apiKey, clientId };
       const user = await this.userService.tryLogin(credentials);
-
-      req.body.userId = user.id;
+      req.body.user = user;
+      res.setHeader('Api-Key', user.apiKey);
+      res.setHeader('Client-Id', user.clientId);
       next();
     } catch (error) {
       next(error);

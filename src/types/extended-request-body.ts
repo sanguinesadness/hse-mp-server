@@ -1,3 +1,5 @@
+import { User } from '@prisma/client';
+
 export type TExtendedRequestBody = {
-  userId: string;
+  user: User;
 };
