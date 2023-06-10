@@ -1,12 +1,35 @@
 import { Body, Controller, Next, Post, Response } from '@nestjs/common';
 import { NextFunction, Response as EResponse } from 'express';
 import { ResponseModel } from 'models';
-import { ProductInfoRequestModel } from 'ozon/models';
+import {
+  DetailedProductInfoRequestModel,
+  ProductInfoRequestModel
+} from 'ozon/models';
 import { ozonProductService } from 'ozon/ozon-product-service';
 import { TExtendedRequestBody } from 'types';
+import { ProductService } from './product.service';
 
 @Controller('product')
 export class ProductController {
+  constructor(private productService: ProductService) {}
+
+  @Post('/detailed_list')
+  public async getDetailedList(
+    @Body() data: TExtendedRequestBody & DetailedProductInfoRequestModel,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const productList = await this.productService.getDetailedList(
+        data.products,
+        data.user
+      );
+      res.json(new ResponseModel({ productList }));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   @Post('/info')
   public async getInfo(
     @Body() data: TExtendedRequestBody & ProductInfoRequestModel,
@@ -24,8 +47,8 @@ export class ProductController {
     }
   }
 
-  @Post('/list')
-  public async getList(
+  @Post('/short_list')
+  public async getShortList(
     @Body() data: TExtendedRequestBody,
     @Response() res: EResponse,
     @Next() next: NextFunction

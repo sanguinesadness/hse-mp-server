@@ -8,7 +8,7 @@ export class OzonRequestService {
     return this._axios;
   }
 
-  constructor(headers: TUserCredentials) {
+  constructor(credentials: TUserCredentials) {
     this._axios = axios.create({
       baseURL: process.env.OZON_API_URL,
       withCredentials: true
@@ -16,8 +16,8 @@ export class OzonRequestService {
 
     this._axios.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        config.headers['Api-Key'] = headers.apiKey;
-        config.headers['Client-Id'] = headers.clientId;
+        config.headers['Api-Key'] = credentials.apiKey;
+        config.headers['Client-Id'] = credentials.clientId;
         config.headers['Host'] = 'api-seller.ozon.ru';
         return config;
       }
