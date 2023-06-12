@@ -1,8 +1,8 @@
 import { Body, Controller, Next, Post, Response } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { ResponseModel } from 'common/models';
+import { TExtendedRequestBody, TUserCredentials } from 'common/types';
 import { NextFunction, Response as EResponse } from 'express';
-import { ResponseModel } from 'models';
-import { TExtendedRequestBody, TUserCredentials } from 'types';
 import { UserService } from './user.service';
 
 @Controller('user')

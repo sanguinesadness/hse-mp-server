@@ -1,17 +1,54 @@
 import { Body, Controller, Next, Post, Response } from '@nestjs/common';
+import { ResponseModel } from 'common/models';
+import { TExtendedRequestBody } from 'common/types';
 import { NextFunction, Response as EResponse } from 'express';
-import { ResponseModel } from 'models';
 import {
   DetailedProductInfoRequestModel,
-  ProductInfoRequestModel
+  ProductCompetitorsRequestModel,
+  ProductInfoRequestModel,
+  ProductModel
 } from 'ozon/models';
-import { ozonProductService } from 'ozon/ozon-product-service';
-import { TExtendedRequestBody } from 'types';
+import { ozonProductApi } from 'ozon/ozon-product-api';
 import { ProductService } from './product.service';
 
 @Controller('product')
 export class ProductController {
   constructor(private productService: ProductService) {}
+
+  @Post('/create')
+  public async create(
+    @Body() data: TExtendedRequestBody & ProductModel,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const product = await this.productService.createOne(
+        ProductModel.fromServer(data, data.user.id)
+      );
+      res.json(new ResponseModel({ product }));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Post('/competitors')
+  public async getCompetitors(
+    @Body() data: TExtendedRequestBody & ProductCompetitorsRequestModel,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const competitorProducts =
+        await this.productService.getCompetitorProducts(
+          data.user.id,
+          data.productId,
+          data.count
+        );
+      res.json(new ResponseModel({ competitors: competitorProducts }));
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Post('/detailed_list')
   public async getDetailedList(
@@ -21,7 +58,7 @@ export class ProductController {
   ) {
     try {
       const productList = await this.productService.getDetailedList(
-        data.products,
+        data.productsInfo,
         data.user
       );
       res.json(new ResponseModel({ productList }));
@@ -37,7 +74,7 @@ export class ProductController {
     @Next() next: NextFunction
   ) {
     try {
-      const productInfo = await ozonProductService.productInfo(
+      const productInfo = await ozonProductApi.productInfo(
         data.user,
         new ProductInfoRequestModel(data)
       );
@@ -54,7 +91,7 @@ export class ProductController {
     @Next() next: NextFunction
   ) {
     try {
-      const products = await ozonProductService.productList(data.user, {});
+      const products = await ozonProductApi.productList(data.user, {});
       res.json(new ResponseModel({ products }));
     } catch (error) {
       next(error);

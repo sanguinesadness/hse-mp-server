@@ -1,14 +1,14 @@
-import { TUserCredentials } from 'types';
-import { ProductInfoRequestModel } from './models';
+import { TUserCredentials } from 'common/types';
+import { OzonBaseApi } from 'ozon/ozon-base-api';
+import { ProductInfoRequestModel, ProductModel } from './models';
 import { OzonEndpointsEnum } from './ozon-endpoints.enum';
-import { OzonRequestService } from './ozon-request-service';
 
-class OzonProductService {
+class OzonProductApi {
   public async productInfo(
     credentials: TUserCredentials,
     data: ProductInfoRequestModel
-  ): Promise<any> {
-    const request = new OzonRequestService(credentials);
+  ): Promise<ProductModel> {
+    const request = new OzonBaseApi(credentials);
     const url = process.env.OZON_API_URL + OzonEndpointsEnum.PRODUCT_INFO;
     const resp = await request.axios.post(url, data);
     return resp.data.result;
@@ -18,11 +18,11 @@ class OzonProductService {
     credentials: TUserCredentials,
     data?: any
   ): Promise<any> {
-    const request = new OzonRequestService(credentials);
+    const request = new OzonBaseApi(credentials);
     const url = process.env.OZON_API_URL + OzonEndpointsEnum.PRODUCT_LIST;
     const resp = await request.axios.post(url, data);
     return resp.data.result;
   }
 }
 
-export const ozonProductService = new OzonProductService();
+export const ozonProductApi = new OzonProductApi();

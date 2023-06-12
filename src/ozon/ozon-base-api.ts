@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { TUserCredentials } from 'types';
+import { TUserCredentials } from 'common/types';
 
-export class OzonRequestService {
+export class OzonBaseApi {
   private readonly _axios: AxiosInstance;
 
   public get axios(): AxiosInstance {

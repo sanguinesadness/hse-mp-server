@@ -11,4 +11,20 @@ model User {
   id        String @id(map: "user_pk") @default(dbgenerated("gen_random_uuid()")) @db.VarChar
   clientId     String    @unique(map: "user_client_id_uindex") @db.VarChar
   apiKey   String @unique(map: "user_api_key_uindex") @db.VarChar
+  product   Product[]
+}
+
+model Product {
+  id           String   @id(map: "product_pk") @default(dbgenerated("gen_random_uuid()")) @db.VarChar()
+  name         String
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @db.Timestamp(6)
+  barcode      String?  @unique(map: "product_barcode_uindex") @db.VarChar
+  offerId      String?  @unique(map: "product_offer_id_uindex") @db.VarChar
+  weight       Float?
+  primaryImage String?
+  oldPrice     Float?
+  newPrice     Float?
+  userId       String   @db.VarChar(36)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "product_user_id_fk")
 }

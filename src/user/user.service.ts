@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, User } from '@prisma/client';
-import { ozonProductService } from 'ozon/ozon-product-service';
-import { TUserCredentials } from 'types';
+import { TUserCredentials } from 'common/types';
+import { ozonProductApi } from 'ozon/ozon-product-api';
 
 @Injectable()
 export class UserService {
   private prisma = new PrismaClient();
 
   public async checkCredentials(credentials: TUserCredentials): Promise<void> {
-    return ozonProductService.productList(credentials, {});
+    await ozonProductApi.productList(credentials, {});
   }
 
   public async createOne(data: Prisma.UserCreateInput): Promise<User> {
