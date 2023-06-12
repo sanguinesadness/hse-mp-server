@@ -1,5 +1,5 @@
 type TProductCompetitorsRequest = {
-  productId: string;
+  productId?: string;
   count?: number;
 };
 
@@ -7,7 +7,7 @@ export class ProductCompetitorsRequestModel
   implements TProductCompetitorsRequest
 {
   count?: number;
-  productId: string;
+  productId?: string;
 
   constructor(data: Partial<ProductCompetitorsRequestModel>) {
     Object.keys(data).forEach((key: string) => {

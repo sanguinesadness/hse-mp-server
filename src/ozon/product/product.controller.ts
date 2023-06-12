@@ -38,13 +38,19 @@ export class ProductController {
     @Next() next: NextFunction
   ) {
     try {
-      const competitorProducts =
-        await this.productService.getCompetitorProducts(
-          data.user.id,
-          data.productId,
-          data.count
-        );
-      res.json(new ResponseModel({ competitors: competitorProducts }));
+      if (data.productId) {
+        const competitorProducts =
+          await this.productService.getProductCompetitors(
+            data.user.id,
+            data.productId,
+            data.count
+          );
+        res.json(new ResponseModel({ competitors: competitorProducts }));
+      }
+
+      const allCompetitorProducts =
+        await this.productService.getAllProductsCompetitors(data.user.id);
+      res.json(new ResponseModel({ competitors: allCompetitorProducts }));
     } catch (error) {
       next(error);
     }
