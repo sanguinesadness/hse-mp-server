@@ -103,4 +103,18 @@ export class ProductController {
       next(error);
     }
   }
+
+  @Post('/top')
+  public async getUserCompetitors(
+    @Body() data: TExtendedRequestBody & { count?: number },
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const topProducts = await this.productService.getTopProducts();
+      res.json(new ResponseModel({ sellerCompetitors: topProducts }));
+    } catch (error) {
+      next(error);
+    }
+  }
 }

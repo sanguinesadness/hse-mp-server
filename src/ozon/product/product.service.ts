@@ -4,9 +4,18 @@ import {
   PrismaClient,
   Product,
   ProductCompetitor,
+  TopProduct,
   User
 } from '@prisma/client';
-import { extractKeywords, getPageWebDriver } from 'common/utils';
+import {
+  extractKeywords,
+  getOzonProducts,
+  getPageWebDriver
+} from 'common/utils';
+import {
+  OZON_TOP_SELLS_PAGE_URL,
+  OZON_WEEKLY_HITS_PAGE_URL
+} from 'ozon/constants';
 import {
   DetailedProductInfoRequestModel,
   ProductInfoRequestModel,
@@ -18,23 +27,6 @@ import { By } from 'selenium-webdriver';
 @Injectable()
 export class ProductService {
   private prisma = new PrismaClient();
-
-  public async createCompetitorProduct(
-    data: Prisma.ProductCompetitorCreateInput
-  ): Promise<ProductCompetitor> {
-    const existingItem = await this.prisma.productCompetitor.findFirst({
-      where: {
-        url: data.url
-      }
-    });
-    if (existingItem) {
-      return await this.prisma.productCompetitor.update({
-        where: { id: existingItem.id },
-        data
-      });
-    }
-    return await this.prisma.productCompetitor.create({ data });
-  }
 
   public async createOne(data: Prisma.ProductCreateInput): Promise<Product> {
     const existingProduct = await this.prisma.product.findFirst({
@@ -49,6 +41,46 @@ export class ProductService {
       return await this.update(existingProduct.id, data);
     }
     return await this.prisma.product.create({ data });
+  }
+
+  public async createProductCompetitor(
+    data: Prisma.ProductCompetitorCreateInput
+  ): Promise<ProductCompetitor> {
+    const existingItem = await this.prisma.productCompetitor.findFirst({
+      where: {
+        AND: {
+          url: data.url,
+          title: data.title
+        }
+      }
+    });
+    if (existingItem) {
+      return await this.prisma.productCompetitor.update({
+        where: { id: existingItem.id },
+        data
+      });
+    }
+    return await this.prisma.productCompetitor.create({ data });
+  }
+
+  public async createTopProduct(
+    data: Prisma.TopProductCreateInput
+  ): Promise<TopProduct> {
+    const existingProduct = await this.prisma.topProduct.findFirst({
+      where: {
+        AND: {
+          url: data.url,
+          title: data.title
+        }
+      }
+    });
+    if (existingProduct) {
+      return await this.prisma.topProduct.update({
+        where: { id: data.id },
+        data
+      });
+    }
+    return await this.prisma.topProduct.create({ data });
   }
 
   public async getAllProductsCompetitors(userId: string) {
@@ -122,7 +154,6 @@ export class ProductService {
     let currentHeight = windowHeight;
     while (currentHeight < pageHeight) {
       await driver.executeScript(`window.scrollTo(0, ${currentHeight})`);
-      // await driver.wait(driver.sleep(1000));
       currentHeight += windowHeight;
     }
 
@@ -241,7 +272,7 @@ export class ProductService {
         competitorProducts.push(competitorProduct);
         try {
           if (competitorProduct.url && competitorProduct.title) {
-            void this.createCompetitorProduct(competitorProduct);
+            void this.createProductCompetitor(competitorProduct);
           }
         } catch {}
       }
@@ -251,6 +282,27 @@ export class ProductService {
       return null;
     } finally {
       await driver.quit();
+    }
+  }
+
+  public async getTopProducts(): Promise<Array<Prisma.TopProductCreateInput> | null> {
+    try {
+      const topSellsProducts = await getOzonProducts(OZON_TOP_SELLS_PAGE_URL);
+      const weeklyHitProducts = await getOzonProducts(
+        OZON_WEEKLY_HITS_PAGE_URL
+      );
+      const allProducts = [...topSellsProducts, ...weeklyHitProducts];
+
+      for (const product of allProducts) {
+        try {
+          if (product.title && product.url) {
+            void this.createTopProduct(product);
+          }
+        } catch {}
+      }
+      return allProducts;
+    } catch {
+      return null;
     }
   }
 
