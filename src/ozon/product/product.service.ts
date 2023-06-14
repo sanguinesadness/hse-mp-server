@@ -28,62 +28,7 @@ import { By } from 'selenium-webdriver';
 export class ProductService {
   private prisma = new PrismaClient();
 
-  public async createOne(data: Prisma.ProductCreateInput): Promise<Product> {
-    const existingProduct = await this.prisma.product.findFirst({
-      where: {
-        OR: {
-          offerId: data.offerId,
-          barcode: data.barcode
-        }
-      }
-    });
-    if (existingProduct) {
-      return await this.update(existingProduct.id, data);
-    }
-    return await this.prisma.product.create({ data });
-  }
-
-  public async createProductCompetitor(
-    data: Prisma.ProductCompetitorCreateInput
-  ): Promise<ProductCompetitor> {
-    const existingItem = await this.prisma.productCompetitor.findFirst({
-      where: {
-        AND: {
-          url: data.url,
-          title: data.title
-        }
-      }
-    });
-    if (existingItem) {
-      return await this.prisma.productCompetitor.update({
-        where: { id: existingItem.id },
-        data
-      });
-    }
-    return await this.prisma.productCompetitor.create({ data });
-  }
-
-  public async createTopProduct(
-    data: Prisma.TopProductCreateInput
-  ): Promise<TopProduct> {
-    const existingProduct = await this.prisma.topProduct.findFirst({
-      where: {
-        AND: {
-          url: data.url,
-          title: data.title
-        }
-      }
-    });
-    if (existingProduct) {
-      return await this.prisma.topProduct.update({
-        where: { id: data.id },
-        data
-      });
-    }
-    return await this.prisma.topProduct.create({ data });
-  }
-
-  public async getAllProductsCompetitors(userId: string) {
+  public async checkAllProductsCompetitors(userId: string) {
     const userProducts = await this.prisma.product.findMany({
       where: {
         userId: userId
@@ -93,7 +38,10 @@ export class ProductService {
     const result = [];
 
     for (const product of userProducts) {
-      const competitors = await this.getProductCompetitors(userId, product.id);
+      const competitors = await this.checkProductCompetitors(
+        userId,
+        product.id
+      );
       result.push({
         product: {
           id: product.id,
@@ -106,31 +54,9 @@ export class ProductService {
     return result;
   }
 
-  public async getDetailedList(
-    productsInfo: DetailedProductInfoRequestModel['productsInfo'],
-    user: User
-  ): Promise<any> {
-    if (!productsInfo || productsInfo.length < 1) {
-      const allProducts = await ozonProductApi.productList(user);
-      productsInfo = allProducts.items.map(({ product_id }) => ({
-        product_id
-      }));
-    }
-
-    const promises = productsInfo.map((productInfo: ProductInfoRequestModel) =>
-      ozonProductApi.productInfo(user, productInfo)
-    );
-    const detailedList = await Promise.all(promises);
-    detailedList.forEach((product: Awaited<ProductModel>) => {
-      this.createOne(ProductModel.fromServer(product, user.id));
-    });
-    return detailedList;
-  }
-
-  public async getProductCompetitors(
+  public async checkProductCompetitors(
     userId: string,
-    productId: string,
-    count?: number
+    productId: string
   ): Promise<Array<Prisma.ProductCompetitorCreateInput> | null> {
     const product = await this.prisma.product.findFirst({
       where: { userId, id: productId }
@@ -163,13 +89,8 @@ export class ProductService {
       );
 
       const competitorProducts: Array<Prisma.ProductCompetitorCreateInput> = [];
-      let index = 0;
 
       for (const element of productElements) {
-        if (++index > count) {
-          continue;
-        }
-
         const competitorProduct: Prisma.ProductCompetitorCreateInput = {
           url: '',
           image: '',
@@ -209,13 +130,13 @@ export class ProductService {
 
         try {
           const newPrice = await element
-            .findElement(By.css('div.oi0 > div.d7-a.ki9 > span > span.d7-a2'))
+            .findElement(By.css('div.o0i > div.d7-a.k9i > span > span.d7-a2'))
             .getText();
           competitorProduct.newPrice = newPrice.trim();
         } catch {
           try {
             const newPrice = await element
-              .findElement(By.css('div.oi0 > div.d6-a.ki9 > div.d6-a0'))
+              .findElement(By.css('div.o0i > div.d6-a.k9i > div.d6-a0'))
               .getText();
             competitorProduct.newPrice = newPrice.trim();
           } catch {}
@@ -225,7 +146,7 @@ export class ProductService {
           const oldPrice = (
             await element
               .findElement(
-                By.css('div.oi0 > div.d7-a.ki9 > span > span.d7-b1.d7-a7')
+                By.css('div.o0i > div.d7-a.k9i > span > span.d7-b1.d7-a7')
               )
               .getText()
           ).trim();
@@ -235,7 +156,7 @@ export class ProductService {
           try {
             const oldPrice = (
               await element
-                .findElement(By.css('div.oi0 > div.d6-a.ki9 > div.d6-b2'))
+                .findElement(By.css('div.o0i > div.d6-a.k9i > div.d6-b2'))
                 .getText()
             ).trim();
             competitorProduct.oldPrice =
@@ -247,19 +168,31 @@ export class ProductService {
           const rating = (
             await element
               .findElement(
-                By.css('div.oi0 > div.ki9 > div > span:nth-child(1) > span')
+                By.css('div.o0i > div > div > span:nth-child(1) > span')
               )
               .getText()
           ).trim();
           competitorProduct.rating =
             rating && !isNaN(parseFloat(rating)) ? parseFloat(rating) : null;
-        } catch {}
+        } catch {
+          try {
+            const rating = (
+              await element
+                .findElement(
+                  By.css('div.o0i > div > div > div > span:nth-child(1) > span')
+                )
+                .getText()
+            ).trim();
+            competitorProduct.rating =
+              rating && !isNaN(parseFloat(rating)) ? parseFloat(rating) : null;
+          } catch {}
+        }
 
         try {
           const comments = (
             await element
               .findElement(
-                By.css('div.oi0 > div.ki9 > div > span:nth-child(2) > span')
+                By.css('div.o0i > div > div > span:nth-child(2) > span')
               )
               .getText()
           )
@@ -267,7 +200,21 @@ export class ProductService {
             .trim();
 
           competitorProduct.comments = comments ? parseInt(comments) : null;
-        } catch {}
+        } catch {
+          try {
+            const comments = (
+              await element
+                .findElement(
+                  By.css('div.o0i > div > div > div > span:nth-child(2) > span')
+                )
+                .getText()
+            )
+              .replace('·', '')
+              .trim();
+
+            competitorProduct.comments = comments ? parseInt(comments) : null;
+          } catch {}
+        }
 
         competitorProducts.push(competitorProduct);
         try {
@@ -285,7 +232,7 @@ export class ProductService {
     }
   }
 
-  public async getTopProducts(): Promise<Array<Prisma.TopProductCreateInput> | null> {
+  public async checkTopProducts(): Promise<Array<Prisma.TopProductCreateInput> | null> {
     try {
       const topSellsProducts = await getOzonProducts(OZON_TOP_SELLS_PAGE_URL);
       const weeklyHitProducts = await getOzonProducts(
@@ -304,6 +251,200 @@ export class ProductService {
     } catch {
       return null;
     }
+  }
+
+  public async clearProductCompetitorDuplicates(): Promise<any> {
+    const records = await this.prisma.productCompetitor.findMany();
+
+    const duplicateIds = [];
+    const seenRecords = {};
+
+    records.forEach((record) => {
+      const key = record.title + record.image;
+
+      if (seenRecords[key]) {
+        duplicateIds.push(record.id);
+      } else {
+        seenRecords[key] = true;
+      }
+    });
+
+    return await this.prisma.productCompetitor.deleteMany({
+      where: {
+        id: {
+          in: duplicateIds
+        }
+      }
+    });
+  }
+
+  public async createOne(data: Prisma.ProductCreateInput): Promise<Product> {
+    const existingProduct = await this.prisma.product.findFirst({
+      where: {
+        OR: {
+          offerId: data.offerId,
+          barcode: data.barcode
+        }
+      }
+    });
+    if (existingProduct) {
+      return await this.update(existingProduct.id, data);
+    }
+    return await this.prisma.product.create({ data });
+  }
+
+  public async createProductCompetitor(
+    data: Prisma.ProductCompetitorCreateInput
+  ): Promise<ProductCompetitor> {
+    const existingItem = await this.prisma.productCompetitor.findFirst({
+      where: {
+        AND: {
+          image: data.image,
+          title: data.title
+        }
+      }
+    });
+    if (existingItem) {
+      return await this.prisma.productCompetitor.update({
+        where: { id: existingItem.id },
+        data
+      });
+    }
+    return await this.prisma.productCompetitor.create({ data });
+  }
+
+  public async createTopProduct(
+    data: Prisma.TopProductCreateInput
+  ): Promise<TopProduct> {
+    const existingProduct = await this.prisma.topProduct.findFirst({
+      where: {
+        AND: {
+          url: data.url,
+          title: data.title
+        }
+      }
+    });
+    if (existingProduct) {
+      return await this.prisma.topProduct.update({
+        where: { id: data.id },
+        data
+      });
+    }
+    return await this.prisma.topProduct.create({ data });
+  }
+
+  public async getAllProductsCompetitors(userId: string, refresh?: boolean) {
+    const sortedCompetitors = await this.getSortedProductCompetitors(userId);
+
+    const groupedCompetitors = new Map();
+
+    for (const competitor of sortedCompetitors) {
+      const { product, ...rest } = competitor;
+      if (!groupedCompetitors.has(product.id)) {
+        groupedCompetitors.set(product.id, { ...product, competitors: [] });
+      }
+      groupedCompetitors.get(product.id).competitors.push(rest);
+    }
+
+    if (refresh) {
+      try {
+        await this.checkAllProductsCompetitors(userId);
+      } catch {}
+    }
+
+    return Array.from(groupedCompetitors.values());
+  }
+
+  public async getDetailedList(
+    productsInfo: DetailedProductInfoRequestModel['productsInfo'],
+    user: User
+  ): Promise<any> {
+    if (!productsInfo || productsInfo.length < 1) {
+      const allProducts = await ozonProductApi.productList(user);
+      productsInfo = allProducts.items.map(({ product_id }) => ({
+        product_id
+      }));
+    }
+
+    const promises = productsInfo.map((productInfo: ProductInfoRequestModel) =>
+      ozonProductApi.productInfo(user, productInfo)
+    );
+    const detailedList = await Promise.all(promises);
+    detailedList.forEach((product: Awaited<ProductModel>) => {
+      this.createOne(ProductModel.fromServer(product, user.id));
+    });
+    return detailedList;
+  }
+
+  public async getProductCompetitors(
+    userId: string,
+    productId: string,
+    refresh?: boolean
+  ) {
+    const competitors = await this.prisma.productCompetitor.findMany({
+      where: {
+        productId,
+        product: {
+          userId
+        }
+      }
+    });
+
+    if (refresh) {
+      try {
+        await this.checkProductCompetitors(userId, productId);
+      } catch {}
+    }
+
+    return competitors;
+  }
+
+  public async getSortedProductCompetitors(userId: string) {
+    const allCompetitors = await this.prisma.productCompetitor.findMany({
+      where: {
+        product: {
+          userId
+        }
+      },
+      include: {
+        product: true
+      },
+      orderBy: {
+        comments: 'desc'
+      }
+    });
+
+    const competitorsWithComments = allCompetitors.filter(
+      (competitor) => competitor.comments !== null
+    );
+    const competitorsWithoutComments = allCompetitors.filter(
+      (competitor) => competitor.comments === null
+    );
+
+    return competitorsWithComments.concat(competitorsWithoutComments);
+  }
+
+  public async getTopProducts(refresh?: boolean): Promise<Array<TopProduct>> {
+    const products = await this.prisma.topProduct.findMany({
+      orderBy: { comments: 'desc' }
+    });
+
+    const productsWithComments = products.filter(
+      (competitor) => competitor.comments !== null
+    );
+    const productsWithoutComments = products.filter(
+      (competitor) => competitor.comments === null
+    );
+
+    const sortedProducts = productsWithComments.concat(productsWithoutComments);
+
+    if (refresh) {
+      try {
+        await this.checkTopProducts();
+      } catch {}
+    }
+
+    return sortedProducts;
   }
 
   public async update(

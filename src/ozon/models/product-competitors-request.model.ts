@@ -1,13 +1,13 @@
 type TProductCompetitorsRequest = {
-  productId?: string;
-  count?: number;
+  productId: string;
+  refresh?: boolean;
 };
 
 export class ProductCompetitorsRequestModel
   implements TProductCompetitorsRequest
 {
-  count?: number;
-  productId?: string;
+  productId: string;
+  refresh?: boolean;
 
   constructor(data: Partial<ProductCompetitorsRequestModel>) {
     Object.keys(data).forEach((key: string) => {

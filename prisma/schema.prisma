@@ -19,7 +19,7 @@ model Product {
   name         String
   createdAt    DateTime @default(now()) @db.Timestamp(6)
   updatedAt    DateTime @default(now()) @db.Timestamp(6)
-  barcode      String?  @unique(map: "product_barcode_uindex") @db.VarChar
+  barcode      String?
   offerId      String?  @unique(map: "product_offer_id_uindex") @db.VarChar
   weight       Float?
   primaryImage String?
