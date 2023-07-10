@@ -3,7 +3,7 @@ import * as chrome from 'selenium-webdriver/chrome';
 
 export async function getPageWebDriver(url: string): Promise<WebDriver> {
   const chromeOptions = new chrome.Options();
-  chromeOptions.addArguments('--start-maximized'); // Открывать окно в полноэкранном режиме
+  chromeOptions.addArguments('--start-maximized');
 
   const driver = await new Builder()
     .withCapabilities(Capabilities.chrome())

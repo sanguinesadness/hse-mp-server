@@ -8,7 +8,8 @@ import {
   DetailedProductInfoRequestModel,
   ProductCompetitorsRequestModel,
   ProductInfoRequestModel,
-  ProductModel
+  ProductModel,
+  TProductDescriptionRequest
 } from 'ozon/models';
 import { ozonProductApi } from 'ozon/ozon-product-api';
 import { ProductService } from './product.service';
@@ -223,11 +224,27 @@ export class ProductController {
     @Next() next: NextFunction
   ) {
     try {
-      const productInfo = await ozonProductApi.productInfo(
+      const productInfo = await this.productService.getProductDetailInfo(
         data.user,
         new ProductInfoRequestModel(data)
       );
       res.json(new ResponseModel({ productInfo }));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Post('/description')
+  public async getProductDescription(
+    @Body() data: TExtendedRequestBody & TProductDescriptionRequest,
+    @Response() res: EResponse,
+    @Next() next: NextFunction
+  ) {
+    try {
+      const result = await ozonProductApi.productDescription(data.user, {
+        ...data
+      });
+      res.json(new ResponseModel(result));
     } catch (error) {
       next(error);
     }

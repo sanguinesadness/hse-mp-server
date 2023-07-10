@@ -370,6 +370,20 @@ export class ProductService {
       ozonProductApi.productInfo(user, productInfo)
     );
     const detailedList = await Promise.all(promises);
+
+    detailedList.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+
+      if (dateA < dateB) {
+        return 1;
+      }
+      if (dateA > dateB) {
+        return -1;
+      }
+      return 0;
+    });
+
     detailedList.forEach((product: Awaited<ProductModel>) => {
       this.createOne(ProductModel.fromServer(product, user.id));
     });
@@ -397,6 +411,16 @@ export class ProductService {
     }
 
     return competitors;
+  }
+
+  public async getProductDetailInfo(user: User, data: ProductInfoRequestModel) {
+    const product = await ozonProductApi.productInfo(user, data);
+    const { description } = await ozonProductApi.productDescription(user, data);
+
+    return {
+      ...product,
+      description
+    };
   }
 
   public async getSortedProductCompetitors(userId: string) {
